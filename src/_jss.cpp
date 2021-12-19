@@ -7,30 +7,20 @@
 #include <algorithm>    // std::sort
 #include <cmath> 
 
+unsigned int seed = time(NULL);
 
 namespace py = pybind11;
 
 int getNum(std::vector<int>& v)
 {
-
-    // Size of the vector
     int n = v.size();
-
-    // Generate a random number
     srand(time(NULL));
-
-    // Make sure the number is within
-    // the index range
     int index = rand() % n;
-
-    // Get random number from the vector
     int num = v[index];
 
-    // Remove the number from the vector
     std::swap(v[index], v[n - 1]);
     v.pop_back();
 
-    // Return the removed number
     return num;
 }
 
@@ -38,31 +28,31 @@ int getNum(std::vector<int>& v)
 void generateRandom(int n, std::vector<int>& S)
 {
     std::vector<int> v(n);
-    // Fill the vector with the values
-    // 0, 1, 2, ..., n-1
     for (int i = 0; i < n; i++)
         v[i] = i;
-
-    // While vector has elements
-    // get a random number from the vector and print it
     while (v.size()) {
-        // cout << getNum(v) << " ";
         S.push_back(getNum(v));
     }
 }
 
-void gen_random_choice(int size, std::vector<int>& _list, int times) {
+void gen_random_choice(int size, std::vector<int>& _list, int times, bool is_sort) {
     //generate non-duplicated #times number in range=0~size    
+    // unsigned int seed = time(NULL);
     for (int i = 0;i < times;i++) {
         int num = 0;
-        unsigned int seed = time(NULL);
         do {
             num = rand_r(&seed) % size;
         } while (std::find(_list.begin(), _list.end(), num) != _list.end());
         _list.push_back(num);
     }
-    std::sort(_list.begin(), _list.end());
-
+    if (is_sort) {
+        std::sort(_list.begin(), _list.end());
+    }
+    // printf("in random choice result=");
+    // for (auto it = _list.begin(); it != _list.end();it++) {
+    //     printf("%d ", *it);
+    // }
+    // printf("\n");
 }
 
 bool is_in_list(int num, std::vector<int>& offspring_list) {
@@ -115,6 +105,7 @@ public:
     std::vector<std::vector<int>> get_offspring_list() { return offspring_list; }
     std::vector<int> get_test() { return test; }
     std::vector<int> get_S() { return S; }
+    std::vector<int> get_makespan_record() { return makespan_record; }
     std::vector<int> get_sequence_best() { return sequence_best; }
 
     long Tbest = 999999999999999;
@@ -135,6 +126,7 @@ public:
 
 void JSS::gene_algorithm() {
     for (int n = 0;n < num_iteration;n++) {
+        // printf("n=%d\n", n);
         long Tbest_now = 99999999999;
         this->crossover();
         this->repairment();
@@ -155,21 +147,16 @@ void JSS::crossover() {
     }
     generateRandom(population_size, S); // generate a random sequence (to select the parent chromosome to crossover)
     for (int m = 0;m < (int)(population_size / 2);m++) {
-        unsigned int seed = time(NULL);
         float crossover_prob = ((double)rand_r(&seed) / (RAND_MAX));
         if (crossover_rate >= crossover_prob) {
             std::vector<int> cutpoint;
-            gen_random_choice(num_gene, cutpoint, 2);
+            gen_random_choice(num_gene, cutpoint, 2,true);
             for (int i = cutpoint[0];i < cutpoint[1];i++) {
-                // std::cout << "S[2 * m]=" << S[2 * m] << " 2 * m" << 2 * m << "\n";
-                // printf("i=%d,%d \n", i, offspring_list[S[2 * m]][i]);
                 offspring_list[S[2 * m]][i] = population_list[S[2 * m]][i];
                 offspring_list[S[2 * m + 1]][i] = population_list[S[2 * m + 1]][i];
             }
         }
     }
-
-
 }
 
 void JSS::repairment() {
@@ -215,13 +202,14 @@ void JSS::repairment() {
 }
 void JSS::mutatuon() {
     int num_mutation_jobs = std::round(num_gene * mutation_selection_rate);
+    // unsigned int seed = time(NULL);
     for (int m = 0;m < offspring_list.size();m++) {
-        unsigned int seed = time(NULL);
         float mutation_prob = ((double)rand_r(&seed) / (RAND_MAX));
+        // std::cout<<"mutation_prob="<<mutation_prob<<"\n";
         if (mutation_rate >= mutation_prob) {
             // printf("mutation_rate >= mutation_prob");
             std::vector<int> m_chg;
-            gen_random_choice(num_gene, m_chg, num_mutation_jobs);
+            gen_random_choice(num_gene, m_chg, num_mutation_jobs,false);
             int t_value_last = offspring_list[m][m_chg[0]];
             for (int i = 0;i < num_mutation_jobs - 1;i++) {
                 offspring_list[m][m_chg[i]] = offspring_list[m][m_chg[i + 1]];
@@ -255,8 +243,8 @@ void JSS::calculate_makespan() {
             m_count[*i] = 0;
         }
         for (auto i = total_chromosome[m].begin();i != total_chromosome[m].end();i++) {
-            int gen_t = int(pt[*i][key_count[*i]]);
-            int gen_m = int(ms[*i][key_count[*i]]);
+            int gen_t = (int)(pt[*i][key_count[*i]]);
+            int gen_m = (int)(ms[*i][key_count[*i]]);
             j_count[*i] = j_count[*i] + gen_t;
             m_count[gen_m] += gen_t;
             if (m_count[gen_m] < j_count[*i])
@@ -265,12 +253,12 @@ void JSS::calculate_makespan() {
                 j_count[*i] = m_count[gen_m];
             key_count[*i] += 1;
         }
-        int makespan = -1;
+        float makespan = -1;
         for (auto it = j_count.begin();it != j_count.end();it++) {
             if (it->second > makespan)
                 makespan = it->second;
         }
-        chrom_fitness.push_back(1 / makespan);
+        chrom_fitness.push_back(1.0 / makespan);
         chrom_fit.push_back(makespan);
         total_fitness += chrom_fitness[m];
     }
@@ -289,9 +277,11 @@ void JSS::selection() {
         qk.push_back(cumulative);
     }
     std::vector<float> selection_rand;
-    unsigned int seed = time(NULL);
+    // unsigned int seed = time(NULL);
     for (int i = 0;i < population_size;i++) {
-        selection_rand.push_back(((double)rand_r(&seed) / (RAND_MAX)));
+        float temp = ((double)rand_r(&seed) / (RAND_MAX));
+        // std::cout<<"ran="<<temp<<"\n";
+        selection_rand.push_back(temp);
     }
     for (int i = 0;i < population_size;i++) {
         if (selection_rand[i] <= qk[0]) {
@@ -316,11 +306,12 @@ void JSS::comparison(long Tbest_now) {
             sequence_now = total_chromosome[i];
         }
     }
-    if (Tbest_now <= Tbest) {
+    if (Tbest_now < Tbest) {
         Tbest = Tbest_now;
         sequence_best = sequence_now;
+        makespan_record.push_back(Tbest);
     }
-    makespan_record.push_back(Tbest);
+
 }
 PYBIND11_MODULE(_jss, m)
 {
@@ -334,7 +325,6 @@ PYBIND11_MODULE(_jss, m)
         .def_property("S", &JSS::get_S, nullptr)
         .def_property("sequence_best", &JSS::get_sequence_best, nullptr)
         .def_property("Tbest", &JSS::get_Tbest, nullptr)
+        .def_property("makespan_record", &JSS::get_makespan_record, nullptr)
         .def_property("offspring_list", &JSS::get_offspring_list, nullptr);
-    // .def_property("population_list", &JSS::get_population_list, nullptr)
-
 }
