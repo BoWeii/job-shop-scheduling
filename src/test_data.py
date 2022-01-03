@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import time
 import _jss
 '''--------plot gantt chart-------'''
 import pandas as pd
@@ -7,6 +8,7 @@ from chart_studio import plotly as py
 import plotly.figure_factory as ff
 import datetime
 import sys
+import random
 
 
 class JSS:
@@ -70,13 +72,16 @@ class JSS:
                        self.num_gene, self.num_job, self.num_mc)
         obj.gene_algorithm()
         # print("population_list=",obj.population_list)
-        print("S=", obj.S)
+        # print("S=", obj.S)
         self.sequence_best = obj.sequence_best
         self.Tbest = obj.Tbest
+        # print("best sequence = ", obj.sequence_best)
         print("====Tbest=====", self.Tbest)
         print("====makespan_record===", obj.makespan_record)
+        return obj.sequence_best
 
     def plotly(self):
+
         m_keys = [j + 1 for j in range(self.num_mc)]
         j_keys = [j for j in range(self.num_job)]
         key_count = {key: 0 for key in j_keys}
@@ -105,8 +110,11 @@ class JSS:
             key_count[i] = key_count[i] + 1
 
         df = []
+        r = lambda: random.randint(0, 255)
+        colors = ['#%02X%02X%02X' % (r(), r(), r())]
         for m in m_keys:
             for j in j_keys:
+                colors.append('#%02X%02X%02X' % (r(), r(), r()))
                 df.append(
                     dict(Task='Machine %s' % (m),
                          Start='2022-01-03 %s' % (str(j_record[(j, m)][0])),
@@ -115,6 +123,7 @@ class JSS:
 
         fig = ff.create_gantt(df,
                               index_col='Resource',
+                              colors=colors if self.num_job > 10 else None,
                               show_colorbar=True,
                               group_tasks=True,
                               showgrid_x=True,
@@ -122,12 +131,37 @@ class JSS:
         fig.show()
 
 
-def main():
-    data_index = (sys.argv)[1]
-    jss = JSS(data_index)
-    jss.gene_algo()
-    jss.plotly()
+def check_answer(sequence, data_size):
+    count = {key: 0 for key in range(data_size)}
+    for i in sequence:
+        count[i] += 1
+    for i in count:
+        if count[i] != data_size:
+            return False
+    return True
 
 
-if __name__ == '__main__':
-    main()
+class TestClass:
+
+    def working(self,data_size):
+        jss = JSS(int(data_size))
+        start_time = time.time()
+        best_sequence = jss.gene_algo()
+        print('the time cost:%s'% (time.time() - start_time))
+        assert check_answer(best_sequence, data_size)
+        jss.plotly()
+
+    def test_with_size(self):
+        self.working(15)
+
+
+
+# def main():
+#     data_index = (sys.argv)[1]
+#     jss = JSS(data_index)
+#     best_sequence=jss.gene_algo()
+#     print(check_answer(best_sequence,10))
+#     jss.plotly()
+
+# if __name__ == '__main__':
+#     main()

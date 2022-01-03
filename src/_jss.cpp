@@ -6,6 +6,7 @@
 #include <time.h>
 #include <algorithm>    // std::sort
 #include <cmath> 
+#define LARGE_NUMBER 99999999999
 
 unsigned int seed = time(NULL);
 
@@ -108,7 +109,7 @@ public:
     std::vector<int> get_makespan_record() { return makespan_record; }
     std::vector<int> get_sequence_best() { return sequence_best; }
 
-    long Tbest = 999999999999999;
+    long Tbest = LARGE_NUMBER;
     std::vector<int> sequence_best, S, test, chrom_fit, makespan_record;
     std::vector<std::vector<int>>pt, ms, population_list, parent_list, offspring_list, total_chromosome;
     std::vector<float> chrom_fitness;
@@ -126,8 +127,7 @@ public:
 
 void JSS::gene_algorithm() {
     for (int n = 0;n < num_iteration;n++) {
-        // printf("n=%d\n", n);
-        long Tbest_now = 99999999999;
+        long Tbest_now = LARGE_NUMBER;
         this->crossover();
         this->repairment();
         this->mutatuon();
@@ -311,7 +311,6 @@ void JSS::comparison(long Tbest_now) {
         sequence_best = sequence_now;
         makespan_record.push_back(Tbest);
     }
-
 }
 PYBIND11_MODULE(_jss, m)
 {
