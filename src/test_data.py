@@ -141,9 +141,7 @@ def check_answer(sequence, data_size):
     return True
 
 
-class TestClass:
-
-    def working(self,data_size):
+def working(data_size):
         jss = JSS(int(data_size))
         start_time = time.time()
         best_sequence = jss.gene_algo()
@@ -151,17 +149,9 @@ class TestClass:
         assert check_answer(best_sequence, data_size)
         jss.plotly()
 
-    def test_with_size(self):
-        self.working(15)
+def main():
+    data_index = (sys.argv)[1]
+    working(int(data_index))
 
-
-
-# def main():
-#     data_index = (sys.argv)[1]
-#     jss = JSS(data_index)
-#     best_sequence=jss.gene_algo()
-#     print(check_answer(best_sequence,10))
-#     jss.plotly()
-
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
