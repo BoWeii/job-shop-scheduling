@@ -18,8 +18,8 @@ import copy
 ''' ================= initialization setting ======================'''
 
 
-pt_tmp=pd.read_excel("JSP_dataset.xlsx",sheet_name="Processing Time",index_col =[0])
-ms_tmp=pd.read_excel("JSP_dataset.xlsx",sheet_name="Machines Sequence",index_col =[0])
+pt_tmp=pd.read_excel("../data/JSP_dataset3.xlsx",sheet_name="Processing Time",index_col =[0])
+ms_tmp=pd.read_excel("../data/JSP_dataset3.xlsx",sheet_name="Machines Sequence",index_col =[0])
 
 dfshape=pt_tmp.shape
 num_mc=dfshape[1] # number of machines
